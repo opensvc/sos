@@ -18,12 +18,15 @@ class Opensvc(Plugin, IndependentPlugin):
 
     def get_status(self, kind):
         """ Get the status of opensvc management service """
-        getobjs = self.collect_cmd_output(f"om {kind} ls --color=no")
+        objecttab = "OBJECT"
+        getobjs = self.collect_cmd_output(f"om {kind} ls --color=no --output tab={objecttab}:meta.object")
         dirname = kind + '_status'
         if getobjs['status'] == 0:
             for line in getobjs['output'].splitlines():
+                if line == objecttab:
+                    continue
                 self.add_cmd_output(
-                    f"om {line} print status --color=no",
+                    f"om {line} instance status --color=no",
                     subdir=dirname
                 )
 
@@ -36,6 +39,7 @@ class Opensvc(Plugin, IndependentPlugin):
             "/etc/sysconfig/opensvc",
             "/var/lib/opensvc/*.json",
             "/var/lib/opensvc/list.*",
+            "/var/lib/opensvc/*.stack",
             "/var/lib/opensvc/ccfg",
             "/var/lib/opensvc/cfg",
             "/var/lib/opensvc/certs/ca_certificates",
@@ -47,14 +51,27 @@ class Opensvc(Plugin, IndependentPlugin):
             "/var/lib/opensvc/svc/*",
             "/var/lib/opensvc/usr/*",
             "/var/lib/opensvc/vol/*",
+            "/run/opensvc/*"
         ])
         self.add_cmd_output([
-            "om pool status --verbose --color=no",
-            "om net status --verbose --color=no",
+            "om pool list --output json --color=no",
+            "om pool list --color=no",
+            "om net list --output json --color=no",
+            "om net list --color=no",
             "om mon --color=no",
+            "om mon --output json --color=no",
             "om daemon dns dump --color=no",
+            "om daemon dns dump --output json --color=no",
             "om daemon relay status --color=no",
-            "om daemon status --format flat_json --color=no"
+            "om daemon relay status --output json --color=no",
+            "om daemon status --color=no",
+            "om daemon status --output json --color=no",
+            "om daemon ps --color=no",
+            "om daemon ps --output json --color=no",
+            "om array list --color=no",
+            "om array list --output json --color=no",
+            "om daemon hb status --color=no",
+            "om daemon hb status --output json --color=no",
         ])
         self.add_dir_listing('/var/lib/opensvc', recursive=True)
         self.get_status('vol')
